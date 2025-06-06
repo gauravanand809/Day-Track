@@ -1,0 +1,919 @@
+/* General Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --font-family-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    --sidebar-width: 260px;
+    --header-height: 60px; /* For view headers */
+
+    /* Light Mode Variables (Todoist Inspired) */
+    --bg-color-light: #ffffff;
+    --text-color-light: #202020;
+    --text-color-secondary-light: #666666;
+    --sidebar-bg-light: #fafafa;
+    --sidebar-text-light: #202020;
+    --sidebar-active-bg-light: #eeeeee;
+    --sidebar-active-text-light: #dd4b39; /* Todoist Red */
+    --sidebar-hover-bg-light: #f0f0f0;
+    --border-color-light: #e5e5e5;
+    --button-bg-light: #dd4b39;
+    --button-text-light: #ffffff;
+    --button-hover-bg-light: #c74433;
+    --input-bg-light: #ffffff;
+    --input-border-light: #cccccc;
+    --input-text-light: #202020;
+    --card-bg-light: #ffffff;
+    --loader-color-light: #dd4b39;
+    --primary-accent-light: #dd4b39;
+    --link-color-light: #007bff;
+
+
+    /* Dark Mode Variables (Todoist Inspired) */
+    --bg-color-dark: #1e1e1e;
+    --text-color-dark: #e0e0e0;
+    --text-color-secondary-dark: #9e9e9e;
+    --sidebar-bg-dark: #252525;
+    --sidebar-text-dark: #e0e0e0;
+    --sidebar-active-bg-dark: #333333;
+    --sidebar-active-text-dark: #e57373; /* Lighter Todoist Red for dark mode */
+    --sidebar-hover-bg-dark: #2c2c2c;
+    --border-color-dark: #3a3a3a;
+    --button-bg-dark: #e57373;
+    --button-text-dark: #1e1e1e;
+    --button-hover-bg-dark: #ef9a9a;
+    --input-bg-dark: #2c2c2c;
+    --input-border-dark: #444444;
+    --input-text-dark: #e0e0e0;
+    --card-bg-dark: #252525;
+    --loader-color-dark: #e57373;
+    --primary-accent-dark: #e57373;
+    --link-color-dark: #63b3ed;
+
+    /* Default to Light Mode */
+    --bg-color: var(--bg-color-light);
+    --text-color: var(--text-color-light);
+    --text-color-secondary: var(--text-color-secondary-light);
+    --sidebar-bg: var(--sidebar-bg-light);
+    --sidebar-text: var(--sidebar-text-light);
+    --sidebar-active-bg: var(--sidebar-active-bg-light);
+    --sidebar-active-text: var(--sidebar-active-text-light);
+    --sidebar-hover-bg: var(--sidebar-hover-bg-light);
+    --border-color: var(--border-color-light);
+    --button-bg-color: var(--button-bg-light);
+    --button-text-color: var(--button-text-light);
+    --button-hover-bg-color: var(--button-hover-bg-light);
+    --input-bg-color: var(--input-bg-light);
+    --input-border-color: var(--input-border-light);
+    --input-text-color: var(--input-text-light);
+    --card-bg-color: var(--card-bg-light);
+    --loader-color: var(--loader-color-light);
+    --primary-accent-color: var(--primary-accent-light);
+    --link-color: var(--link-color-light);
+}
+
+body.dark-mode {
+    --bg-color: var(--bg-color-dark);
+    --text-color: var(--text-color-dark);
+    --text-color-secondary: var(--text-color-secondary-dark);
+    --sidebar-bg: var(--sidebar-bg-dark);
+    --sidebar-text: var(--sidebar-text-dark);
+    --sidebar-active-bg: var(--sidebar-active-bg-dark);
+    --sidebar-active-text: var(--sidebar-active-text-dark);
+    --sidebar-hover-bg: var(--sidebar-hover-bg-dark);
+    --border-color: var(--border-color-dark);
+    --button-bg-color: var(--button-bg-dark);
+    --button-text-color: var(--button-text-dark);
+    --button-hover-bg-color: var(--button-hover-bg-dark);
+    --input-bg-color: var(--input-bg-dark);
+    --input-border-color: var(--input-border-dark);
+    --input-text-color: var(--input-text-dark);
+    --card-bg-color: var(--card-bg-dark);
+    --loader-color: var(--loader-color-dark);
+    --primary-accent-color: var(--primary-accent-dark);
+    --link-color: var(--link-color-dark);
+}
+
+body {
+    font-family: var(--font-family-main);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    display: flex; /* For sidebar layout */
+    height: 100vh;
+    overflow: hidden; /* Prevent body scroll, individual areas will scroll */
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.app-wrapper {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+#sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--sidebar-bg);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-color);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    height: 100vh;
+    overflow-y: auto;
+    /* For smooth collapse/expand */
+    transition: width 0.3s ease; 
+}
+
+/* Collapsed state for sidebar */
+#sidebar.collapsed {
+    width: 70px; /* Adjust as needed for icon-only view */
+}
+#sidebar.collapsed .sidebar-header h2,
+#sidebar.collapsed .sidebar-nav .nav-link span.link-text { /* Assuming nav links will have text in a span */
+    display: none;
+}
+#sidebar.collapsed .sidebar-nav .nav-link {
+    text-align: center; /* Center icons */
+}
+/* We'll need to wrap link text in spans later to hide them, e.g. <span>Generator</span> */
+/* For now, this will hide all text content in links when collapsed */
+#sidebar.collapsed .sidebar-nav li a.nav-link {
+    font-size: 0; /* Hide text by making font size 0 */
+}
+#sidebar.collapsed .sidebar-nav li a.nav-link::before { /* If using ::before for icons */
+    font-size: 1.2rem; /* Restore icon font size */
+    margin-right: 0;
+}
+#sidebar.collapsed .sidebar-footer {
+    justify-content: center;
+}
+
+
+.sidebar-header {
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-header h2 {
+    font-size: 1.4em;
+    color: var(--sidebar-text);
+    font-weight: 700;
+}
+
+#dark-mode-toggle {
+    background: none;
+    border: 1px solid var(--text-color-secondary);
+    color: var(--text-color-secondary);
+    padding: 6px 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+#dark-mode-toggle:hover {
+    background-color: var(--text-color-secondary);
+    color: var(--sidebar-bg); /* Invert colors on hover */
+    transform: scale(1.1);
+}
+
+
+.sidebar-nav {
+    list-style: none;
+    flex-grow: 1; /* Pushes footer to bottom */
+}
+
+.sidebar-nav li a.nav-link {
+    display: block;
+    padding: 10px 15px;
+    margin-bottom: 5px;
+    text-decoration: none;
+    color: var(--sidebar-text);
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-nav li a.nav-link:hover {
+    background-color: var(--sidebar-hover-bg);
+}
+
+.sidebar-nav li a.nav-link.active {
+    background-color: var(--sidebar-active-bg);
+    color: var(--sidebar-active-text);
+    font-weight: 700;
+}
+
+#content-area {
+    flex-grow: 1;
+    padding: 25px;
+    overflow-y: auto; /* Allow content area to scroll */
+    height: 100vh;
+    background-color: var(--bg-color);
+}
+
+.view {
+    display: none; /* Hidden by default */
+}
+.view.active-view {
+    display: block; /* Show active view */
+}
+
+.view-header { /* Replaces old header style */
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+.view-header h1, .view-header h2 {
+    font-size: 1.8em;
+    color: var(--text-color);
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+.view-header p {
+    font-size: 0.95em;
+    color: var(--text-color-secondary);
+}
+
+
+/* Controls (select, buttons) styling */
+.controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.controls select,
+.controls button,
+button { /* General button styling */
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: 1px solid var(--input-border-color);
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.controls select {
+    flex-grow: 1;
+    background-color: var(--input-bg-color);
+    color: var(--input-text-color);
+    min-width: 180px;
+}
+
+/* Ensure all input[type=text], input[type=password], input[type=date], select, textarea share common styling */
+input[type="text"],
+input[type="password"],
+input[type="date"],
+select,
+textarea {
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: 1px solid var(--input-border-color);
+    font-size: 0.95em;
+    background-color: var(--input-bg-color);
+    color: var(--input-text-color);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="date"]:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--primary-accent-color);
+    box-shadow: 0 0 0 2px var(--primary-accent-light); /* Adjust alpha for light/dark if needed */
+}
+body.dark-mode input[type="text"]:focus,
+body.dark-mode input[type="password"]:focus,
+body.dark-mode input[type="date"]:focus,
+body.dark-mode select:focus,
+body.dark-mode textarea:focus {
+    box-shadow: 0 0 0 2px var(--primary-accent-dark);
+}
+
+
+.controls button, button {
+    background-color: var(--button-bg-color);
+    color: var(--button-text-color);
+    border-color: var(--button-bg-color); /* Match border to bg */
+    font-weight: 500;
+}
+.controls button:hover, button:hover {
+    background-color: var(--button-hover-bg-color);
+    border-color: var(--button-hover-bg-color);
+}
+.controls button:disabled, button:disabled {
+    background-color: #ccc;
+    border-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+}
+body.dark-mode .controls button:disabled,
+body.dark-mode button:disabled {
+    background-color: #555;
+    border-color: #555;
+    color: #888;
+}
+
+/* Specific button adjustments if needed */
+#download-btn { /* Already inherits general button styles */ }
+
+#pick-for-me-btn, #generate-btn {
+    /* Remove flex-grow if it was causing issues, let them size by content/padding */
+    /* flex-grow: 1; */ /* This was in HTML, better to control here or remove if not needed */
+}
+.controls-buttons button { /* Target buttons specifically in this container */
+    flex-grow: 1; /* Allow them to share space in their specific flex container */
+}
+
+
+#clear-history-btn, #delete-event-btn { /* Destructive action */
+    background-color: #d9534f; /* Bootstrap danger red */
+    border-color: #d9534f;
+    color: white;
+}
+#clear-history-btn:hover {
+    background-color: #c9302c;
+    border-color: #c9302c;
+}
+body.dark-mode #clear-history-btn {
+    background-color: #c9302c;
+    border-color: #c9302c;
+}
+body.dark-mode #clear-history-btn:hover {
+    background-color: #ac2925;
+    border-color: #ac2925;
+}
+
+
+#loader {
+    border: 4px solid var(--bg-color);
+    border-top: 4px solid var(--loader-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 0.8s linear infinite;
+    margin: 25px auto;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#todo-container, #history-detail-content { /* Container for generated list */
+    margin-top: 15px;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--card-bg-color);
+    min-height: 80px;
+}
+
+/* Error message styling */
+p[style*="color:red"] {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #f5c6cb;
+    margin: 10px 0;
+}
+body.dark-mode p[style*="color:red"] {
+    background-color: #5c2b29;
+    color: #ffcdd2;
+    border: 1px solid #e57373;
+}
+
+/* Table Styles (for to-do list and history detail) */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+th, td {
+    border: 1px solid var(--border-color);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background-color: var(--sidebar-hover-bg); /* Subtle header */
+    font-weight: 600;
+}
+tbody tr:hover {
+    background-color: var(--sidebar-hover-bg); /* Consistent hover */
+}
+td input[type="checkbox"] {
+    margin-right: 8px; /* Increased margin slightly */
+    cursor: pointer;
+    transform: scale(1.2); /* Increased size */
+}
+/* Also style the checkbox in the event modal */
+.modal-content input[type="checkbox"] {
+    transform: scale(1.2);
+    margin-right: 8px;
+}
+
+a {
+    color: var(--link-color);
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* History View Specifics */
+.history-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+#history-search {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid var(--input-border-color);
+    border-radius: 6px;
+    background-color: var(--input-bg-color);
+    color: var(--input-text-color);
+    font-size: 0.9em;
+}
+#history-list-container {
+    max-height: calc(100vh - 250px); /* Adjust based on other elements */
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px;
+}
+.history-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.history-item:last-child { border-bottom: none; }
+.history-item:hover { background-color: var(--sidebar-hover-bg); }
+.history-item-topic {
+    font-weight: 600;
+    color: var(--primary-accent-color);
+    font-size: 1em;
+}
+.history-item-date {
+    font-size: 0.8em;
+    color: var(--text-color-secondary);
+    margin-top: 3px;
+}
+#history-detail-container {
+    margin-top: 15px;
+}
+#back-to-history-list-btn { margin-bottom: 15px; }
+#history-detail-topic { font-size: 1.4em; margin-bottom: 3px; }
+#history-detail-date { font-size: 0.85em; color: var(--text-color-secondary); margin-bottom: 12px; }
+#history-detail-container h4 { margin-top: 15px; margin-bottom: 6px; font-size: 1.1em; }
+#history-detail-notes {
+    width: 100%;
+    min-height: 70px;
+    padding: 8px;
+    border: 1px solid var(--input-border-color);
+    border-radius: 6px;
+    background-color: var(--input-bg-color);
+    color: var(--input-text-color);
+    font-family: var(--font-family-main);
+    font-size: 0.9em;
+    margin-bottom: 8px;
+}
+
+/* Placeholders for Dashboard and Calendar */
+#dashboard-view, #calendar-view {
+    padding: 20px;
+}
+#myChart { /* Example for Chart.js */
+    max-width: 100%;
+    max-height: 300px; /* Or adjust as needed */
+}
+#calendar { /* Example for FullCalendar */
+    max-width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column; /* Stack sidebar and content on small screens */
+        overflow: auto; /* Allow body scroll on small screens */
+    }
+    #sidebar {
+        width: 100%;
+        height: auto; /* Auto height for sidebar */
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        overflow-y: visible;
+    }
+    .sidebar-header h2 { font-size: 1.2em; }
+    .sidebar-nav li a.nav-link { padding: 8px 10px; font-size: 0.95em;}
+    #content-area {
+        height: auto; /* Auto height for content */
+        padding: 15px;
+    }
+    .view-header h1, .view-header h2 { font-size: 1.5em; }
+    .controls { flex-direction: column; gap: 8px; }
+    .controls select, .controls button, button { width: 100%; }
+
+    #sidebar.collapsed { /* Adjustments for small screens when collapsed */
+        width: 100%; /* Full width when stacked */
+    }
+    #sidebar.collapsed .sidebar-nav li a.nav-link {
+        font-size: 0.95em; /* Restore text if sidebar is stacked and "collapsed" (which it won't be visually) */
+        text-align: left;
+    }
+     #sidebar.collapsed .sidebar-nav li a.nav-link::before {
+        font-size: 1em; /* Restore icon font size */
+    }
+}
+
+.sidebar-footer {
+    margin-top: auto; /* Pushes to the bottom */
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end; /* Align button to the right by default */
+}
+
+#toggle-sidebar-btn {
+    background: var(--sidebar-hover-bg);
+    border: 1px solid var(--border-color);
+    color: var(--sidebar-text);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+#toggle-sidebar-btn:hover {
+    background-color: var(--sidebar-active-bg);
+    color: var(--sidebar-active-text);
+}
+
+
+/* Custom Calendar Styles */
+#calendar-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: var(--sidebar-hover-bg); /* Subtle background for nav */
+    border-radius: 6px;
+}
+#calendar-nav h3 {
+    margin: 0 10px;
+    font-size: 1.2em;
+    color: var(--text-color);
+}
+#calendar-nav button {
+    padding: 8px 12px; /* Slightly smaller than main controls */
+}
+
+#calendar-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-weight: 600;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 5px;
+    color: var(--text-color-secondary);
+}
+#calendar-grid-header div {
+    padding: 5px;
+}
+
+#calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px; /* Gap between day cells */
+}
+
+.calendar-day {
+    border: 1px solid var(--border-color);
+    min-height: 100px; /* Adjust as needed */
+    padding: 8px;
+    border-radius: 4px;
+    background-color: var(--card-bg-light); /* Slightly different for day cells */
+    transition: background-color 0.2s ease;
+    font-size: 0.9em;
+}
+body.dark-mode .calendar-day {
+    background-color: var(--card-bg-dark);
+}
+
+.calendar-day.other-month {
+    background-color: var(--sidebar-bg); /* Dim days not in current month */
+    opacity: 0.6;
+}
+body.dark-mode .calendar-day.other-month {
+    background-color: var(--sidebar-hover-bg);
+}
+
+
+.calendar-day .day-number {
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: block;
+    text-align: right;
+    color: var(--text-color);
+}
+.calendar-day.today .day-number {
+    color: var(--button-bg-color); /* Highlight today's number */
+    font-weight: bold;
+    background-color: var(--sidebar-active-bg);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    float: right; /* Todoist like */
+}
+
+
+.calendar-day-events {
+    font-size: 0.8em;
+}
+.calendar-event-item {
+    /* Default to manual event style (blueish) */
+    background-color: var(--link-color-light); /* Using link color for blueish tint */
+    color: var(--button-text-color);
+    padding: 3px 6px;
+    border-radius: 4px;
+    margin-bottom: 3px;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9em; /* Slightly smaller event text */
+}
+.calendar-event-item.completed {
+    text-decoration: line-through;
+    opacity: 0.7;
+    background-color: var(--text-color-secondary);
+}
+body.dark-mode .calendar-event-item.completed {
+    background-color: var(--text-color-secondary);
+}
+
+.calendar-event-item.event-ai-plan {
+    background-color: #FFD700; /* Gold/Yellowish for AI Plan */
+    color: #333; /* Darker text for yellow background */
+}
+body.dark-mode .calendar-event-item.event-ai-plan {
+    background-color: #EAA228; /* Darker yellow for dark mode */
+    color: #111;
+}
+.calendar-event-item.event-manual {
+    /* Already styled by default .calendar-event-item, but can add specifics if needed */
+    background-color: var(--link-color); /* Explicitly blueish */
+}
+body.dark-mode .calendar-event-item.event-manual {
+    background-color: var(--link-color-dark);
+}
+
+
+/* Event Modal Styles */
+.modal {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure it's on top */
+}
+.modal-content {
+    background-color: var(--card-bg-color);
+    padding: 25px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+}
+.close-modal-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.8em;
+    font-weight: bold;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+}
+.close-modal-btn:hover {
+    color: var(--text-color);
+}
+
+.modal-content label {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+.modal-content input[type="text"],
+.modal-content input[type="date"],
+.modal-content textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--input-border-color);
+    border-radius: 6px;
+    background-color: var(--input-bg-color);
+    color: var(--input-text-color);
+    font-size: 0.95em;
+    margin-bottom: 10px;
+}
+.modal-content textarea {
+    min-height: 60px;
+    resize: vertical;
+}
+.modal-content input[type="checkbox"] {
+    margin-right: 5px;
+    vertical-align: middle;
+}
+.modal-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.modal-actions button {
+    /* General button styles are inherited */
+}
+#delete-event-btn {
+    background-color: #d9534f; /* Red for delete */
+    border-color: #d9534f;
+    color: white;
+}
+#delete-event-btn:hover {
+    background-color: #c9302c;
+    border-color: #c9302c;
+}
+body.dark-mode #delete-event-btn {
+    background-color: #c9302c;
+    border-color: #c9302c;
+}
+body.dark-mode #delete-event-btn:hover {
+    background-color: #ac2925;
+    border-color: #ac2925;
+}
+
+/* AI Plan Controls */
+#ai-plan-controls label {
+    margin-right: 5px;
+    font-size: 0.9em;
+    align-self: center; /* Align labels better with inputs */
+}
+#ai-plan-controls input[type="text"], 
+#ai-plan-controls input[type="date"] {
+    /* Ensure they use the common input styling defined above */
+    padding: 10px 15px; /* Consistent padding */
+}
+#generate-ai-plan-btn {
+    /* margin-left: auto; */ /* Removed to allow normal flow or flex container to manage */
+    /* General button styling applies */
+}
+@media (max-width: 768px) {
+    #calendar-nav {
+        flex-direction: column;
+        gap: 8px;
+    }
+    #calendar-grid {
+        gap: 2px;
+    }
+    .calendar-day {
+        min-height: 70px;
+        padding: 5px;
+        font-size: 0.8em;
+    }
+    .calendar-day .day-number {
+        font-size: 0.9em;
+    }
+    .calendar-event-item {
+        font-size: 0.85em;
+        padding: 2px 4px;
+    }
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+}
+
+/* Settings View Styles */
+.settings-form-container {
+    max-width: 600px; /* Limit width of settings form */
+    margin-top: 10px;
+}
+.setting-item {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+.setting-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+.setting-item label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-color);
+}
+.setting-item input[type="password"],
+.setting-item input[type="text"], /* If we add other text inputs */
+.setting-item select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--input-border-color);
+    border-radius: 6px;
+    background-color: var(--input-bg-color);
+    color: var(--input-text-color);
+    font-size: 0.95em;
+}
+.setting-description {
+    font-size: 0.85em;
+    color: var(--text-color-secondary);
+    margin-top: 5px;
+}
+#save-settings-btn {
+    /* Uses general button styling, can add specifics if needed */
+    margin-top: 10px; 
+}
+
+/* Toast Notification Styles */
+#toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 2000; /* Ensure toasts are on top of other content */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.toast {
+    background-color: var(--sidebar-text); /* Using sidebar text for contrast */
+    color: var(--sidebar-bg); /* Using sidebar bg for contrast */
+    padding: 12px 20px;
+    border-radius: 6px;
+    margin-top: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateX(100%);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    font-size: 0.95em;
+}
+
+body.dark-mode .toast {
+    background-color: var(--sidebar-text-dark);
+    color: var(--sidebar-bg-dark);
+}
+
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast.success {
+    background-color: #28a745; /* Green for success */
+    color: white;
+}
+body.dark-mode .toast.success {
+    background-color: #218838;
+}
+
+.toast.error {
+    background-color: #dc3545; /* Red for error */
+    color: white;
+}
+body.dark-mode .toast.error {
+    background-color: #c82333;
+}
+
+.toast.info {
+    background-color: #17a2b8; /* Blue for info */
+    color: white;
+}
+body.dark-mode .toast.info {
+    background-color: #138496;
+}

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day-Planner</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Placeholder for icons (e.g., Font Awesome or SVGs) - we can add later -->
+</head>
+<body>
+    <div class="app-wrapper">
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h2>Day-Planner</h2>
+                <button id="dark-mode-toggle" aria-label="Toggle Dark Mode">🌓</button>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="#" id="nav-generator" class="nav-link active" data-view="generator-view">
+                    <!-- Icon placeholder --> <span class="link-text">Generator</span>
+                </a></li>
+                <li><a href="#" id="nav-history" class="nav-link" data-view="history-view">
+                    <!-- Icon placeholder --> <span class="link-text">History</span>
+                </a></li>
+                <li><a href="#" id="nav-dashboard" class="nav-link" data-view="dashboard-view">
+                    <!-- Icon placeholder --> <span class="link-text">Dashboard</span>
+                </a></li>
+                <li><a href="#" id="nav-calendar" class="nav-link" data-view="calendar-view">
+                    <!-- Icon placeholder --> <span class="link-text">Calendar/Plan</span>
+                </a></li>
+                <li><a href="#" id="nav-settings" class="nav-link" data-view="settings-view">
+                    <!-- Icon placeholder --> <span class="link-text">Settings</span>
+                </a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <button id="toggle-sidebar-btn" aria-label="Toggle Sidebar">
+                    < <!-- Placeholder for collapse icon -->
+                </button>
+            </div>
+        </nav>
+
+        <main id="content-area">
+            <!-- Generator View -->
+            <div id="generator-view" class="view active-view">
+                <header class="view-header">
+                    <h1>AI Topic Deep-Dive</h1>
+                    <p>Select a topic to generate a comprehensive to-do list for study and revision.</p>
+                </header>
+                <div class="controls" style="flex-direction: column; align-items: stretch;"> 
+                    <select id="topic-select">
+                        <option value="" disabled selected>-- Select a Topic --</option>
+                        <option value="Array">Array</option>
+                        <option value="String">String</option>
+                        <option value="String Matching">String Matching</option>
+                        <option value="Dynamic Programming">Dynamic Programming</option>
+                        <option value="Math">Math</option>
+                        <option value="Greedy">Greedy</option>
+                        <option value="DFS+BFS+Graphs">DFS+BFS+Graphs</option>
+                        <option value="Binary Search">Binary Search</option>
+                        <option value="Database">Database</option>
+                        <option value="Tree & Binary Tree">Tree & Binary Tree</option>
+                        <option value="Binary Search Tree">Binary Search Tree</option>
+                        <option value="Two Pointers">Two Pointers</option>
+                        <option value="Sliding Window">Sliding Window</option>
+                        <option value="Bit Manipulation">Bit Manipulation</option>
+                        <option value="Bitmask">Bitmask</option>
+                        <option value="Heap (Priority Queue)">Heap (Priority Queue)</option>
+                        <option value="Stack & Monotonic Stack">Stack & Monotonic Stack</option>
+                        <option value="Queue">Queue</option>
+                        <option value="Design">Design</option>
+                        <option value="Backtracking">Backtracking</option>
+                        <option value="Linked List">Linked List</option>
+                        <option value="Trie">Trie</option>
+                        <option value="Number Theory">Number Theory</option>
+                        <option value="Divide and Conquer">Divide and Conquer</option>
+                        <option value="Recursion">Recursion</option>
+                        <option value="Segment Tree">Segment Tree</option>
+                        <option value="Binary Indexed Tree">Binary Indexed Tree</option>
+                        <option value="Geometry">Geometry</option>
+                        <option value="Game Theory">Game Theory</option>
+                        <option value="other-topic">Other (Specify below)</option>
+                    </select>
+                    <input type="text" id="topic-other-input" placeholder="Enter custom topic name" style="display:none; margin-top: 10px; padding: 10px 15px; border-radius: 6px; border: 1px solid var(--input-border-color); font-size: 0.95em; background-color: var(--input-bg-color); color: var(--input-text-color);">
+                    <div class="controls-buttons" style="display: flex; gap: 12px; margin-top: 10px;">
+                        <button id="pick-for-me-btn" style="flex-grow: 1;">Pick for Me</button>
+                        <button id="generate-btn" style="flex-grow: 1;">Generate</button>
+                    </div>
+                </div>
+                <div id="loader" class="loader" style="display:none;"></div>
+                <div id="todo-container">
+                    <!-- Generated content will appear here -->
+                </div>
+                <button id="download-btn" style="display:none;">Download Todo List</button>
+            </div>
+
+            <!-- History View -->
+            <div id="history-view" class="view">
+                <header class="view-header">
+                    <h2>Past To-Do Lists</h2>
+                </header>
+                <div class="history-controls">
+                    <input type="text" id="history-search" placeholder="Search history by topic...">
+                    <button id="clear-history-btn">Clear All History</button>
+                </div>
+                <div id="history-list-container">
+                    <!-- List of historical to-dos will appear here -->
+                </div>
+                <div id="history-detail-container" style="display:none;">
+                    <button id="back-to-history-list-btn">&larr; Back to List</button>
+                    <h3 id="history-detail-topic"></h3>
+                    <p id="history-detail-date"></p>
+                    <div id="history-detail-content"></div>
+                    <h4>Notes:</h4>
+                    <textarea id="history-detail-notes" placeholder="Add your notes for this to-do list..."></textarea>
+                    <button id="save-history-note-btn">Save Note</button>
+                </div>
+            </div>
+
+            <!-- Dashboard View (Placeholder) -->
+            <div id="dashboard-view" class="view">
+                <header class="view-header">
+                    <h2>Dashboard</h2>
+                </header>
+                <p>Dashboard content will go here (charts, stats, etc.).</p>
+                <canvas id="myChart" width="400" height="200"></canvas> <!-- Example Chart.js canvas -->
+            </div>
+
+            <!-- Calendar/Plan View (Placeholder) -->
+            <div id="calendar-view" class="view">
+                <header class="view-header">
+                    <h2>Calendar / Plan</h2>
+                    <div id="calendar-nav">
+                        <button id="prev-month-btn">< Prev</button>
+                        <h3 id="current-month-year"></h3>
+                        <button id="next-month-btn">Next ></button>
+                        <button id="today-btn">Today</button>
+                    </div>
+                </header>
+                <div id="calendar-grid-header">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div id="calendar-grid">
+                    <!-- Days will be populated by JavaScript -->
+                </div>
+                <div id="ai-plan-controls" style="margin-top: 20px; padding-top:15px; border-top: 1px solid var(--border-color);">
+                    <h4>AI Study Plan Generator</h4>
+                    <div class="controls">
+                        <input type="text" id="ai-plan-topic" placeholder="Main Topic/Goal for AI Plan" style="flex-grow:1;">
+                    </div>
+                    <div class="controls">
+                        <label for="ai-plan-start-date">Start Date:</label>
+                        <input type="date" id="ai-plan-start-date">
+                        <label for="ai-plan-end-date">End Date:</label>
+                        <input type="date" id="ai-plan-end-date">
+                    </div>
+                    <button id="generate-ai-plan-btn">Generate AI Plan</button>
+                </div>
+            </div>
+
+            <!-- Event Modal (Hidden by default) -->
+            <div id="event-modal" class="modal" style="display:none;">
+                <div class="modal-content">
+                    <span class="close-modal-btn">&times;</span>
+                    <h3 id="modal-title">Add/Edit Event</h3>
+                    <input type="hidden" id="event-id">
+                    <label for="event-date">Date:</label>
+                    <input type="date" id="event-date" readonly>
+                    <label for="event-title">Title:</label>
+                    <input type="text" id="event-title" placeholder="Event title">
+                    <label for="event-description">Description (Optional):</label>
+                    <textarea id="event-description" placeholder="Event details..."></textarea>
+                    <label for="event-tags">Tags (comma-separated):</label>
+                    <input type="text" id="event-tags" placeholder="e.g., study, important">
+                    <label>
+                        <input type="checkbox" id="event-completed"> Completed
+                    </label>
+                    <div class="modal-actions">
+                        <button id="save-event-btn">Save Event</button>
+                        <button id="delete-event-btn" style="display:none;">Delete Event</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settings-view" class="view">
+                <header class="view-header">
+                    <h2>Settings</h2>
+                </header>
+                <div class="settings-form-container">
+                    <div class="setting-item">
+                        <label for="api-key-input">Gemini API Key:</label>
+                        <input type="password" id="api-key-input" placeholder="Enter your Gemini API Key">
+                        <p class="setting-description">Your API key is stored locally and never shared.</p>
+                    </div>
+                    <div class="setting-item">
+                        <label for="ai-model-select">AI Model for To-Do & Plan Generation:</label>
+                        <select id="ai-model-select">
+                            <option value="gemini-2.5-pro-preview-06-05">Gemini 2.5 Pro (Default)</option>
+                            <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash</option>
+                            <option value="other">Other (Specify below)</option>
+                        </select>
+                        <input type="text" id="ai-model-other-input" placeholder="Enter custom model name" style="display:none; margin-top: 5px;">
+                        <p class="setting-description">Select a model or specify another. Ensure your API key has access.</p>
+                    </div>
+                    <button id="save-settings-btn">Save Settings</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- Marked.js library to parse Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Chart.js library (we'll use this later for dashboard) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="app.js"></script>
+    <div id="toast-container"></div>
+</body>
+</html>
