@@ -10,17 +10,21 @@ An AI-powered desktop application for generating detailed to-do lists and study 
 
 ## Features
 
-*   **AI-Powered To-Do List Generation:** Generate comprehensive, Markdown-formatted to-do lists for various technical topics using the Google Gemini API.
+*   **Flexible AI-Powered Generation:**
+    *   Generate comprehensive, Markdown-formatted to-do lists and study plans.
+    *   Supports **Google Gemini API** and **OpenAI-compatible APIs** (e.g., for local LLMs via OpenRouter, Jan.ai, LM Studio).
 *   **Customizable Topic Input:** Select from a predefined list of topics or enter a custom topic for to-do list generation.
 *   **History Tracking:**
-    *   Automatically saves all generated to-do lists.
+    *   Automatically saves all generated to-do lists with their completion states.
     *   View past to-do lists.
     *   Add and save personal notes to each historical entry.
-    *   Interactive checkboxes within historical to-do lists with persistent state (your progress is saved).
+    *   Interactive checkboxes within historical to-do lists with persistent state.
     *   Search functionality for history.
-    *   Option to clear all history.
-*   **Dashboard:**
-    *   Visualizes "To-Do Lists Generated per Topic" using a bar chart.
+    *   Option to clear all history or **delete individual history entries**.
+*   **Enhanced Dashboard:**
+    *   Visualizes "To-Do Lists Generated per Topic" (bar chart).
+    *   Displays "Overall Task Completion" percentage and progress bar.
+    *   Shows "Task Completion Rate per Topic" (bar chart).
     *   Adapts to light/dark mode.
 *   **Custom Calendar & AI Study Planner:**
     *   Full monthly calendar view with navigation (previous/next month, today).
@@ -33,10 +37,11 @@ An AI-powered desktop application for generating detailed to-do lists and study 
     *   Collapsible sidebar for navigation (defaults to expanded, state is saved).
     *   Responsive layout.
 *   **Themes:** Light and Dark mode support, with user preference saved.
-*   **User Settings:**
-    *   Configure your Google Gemini API Key.
-    *   Select the AI model for generation (from a predefined list or specify a custom model name).
-    *   Settings are saved locally.
+*   **User Settings (Multi-Provider Support):**
+    *   Choose your AI provider: Google Gemini or OpenAI-compatible API.
+    *   **For Gemini:** Configure your API Key and select/specify the model name.
+    *   **For OpenAI-compatible:** Configure the API Base URL, an optional API Key, and the model name.
+    *   All settings are saved locally.
 *   **User Feedback:** Non-intrusive toast notifications for actions and errors.
 *   **Cross-Platform Potential:** Built with Electron, enabling packaging for Linux, Windows, and macOS (currently configured for Linux .deb).
 
@@ -44,15 +49,19 @@ An AI-powered desktop application for generating detailed to-do lists and study 
 
 *   **Electron:** For building the cross-platform desktop application.
 *   **Frontend:** HTML, CSS, Vanilla JavaScript.
-*   **Node.js:** For the Electron main process.
-*   **AI Integration:** Google Gemini API (via `@google/generative-ai` npm package).
+*   **Node.js:** For the Electron main process and backend API interactions.
+*   **AI Integration:**
+    *   Google Gemini API (via `@google/generative-ai` npm package).
+    *   OpenAI-compatible APIs (via Node.js `https` module for direct HTTP requests).
 *   **Charting:** Chart.js (for the dashboard).
 *   **Markdown Parsing:** Marked.js.
 
 ## Prerequisites (for Development)
 
 *   [Node.js](https://nodejs.org/) (which includes npm). It's recommended to use a recent LTS version.
-*   A Google Gemini API Key. You can obtain one from [Google AI Studio](https://aistudio.google.com/app/apikey).
+*   An API Key for your chosen AI provider:
+    *   For Google Gemini: Obtain one from [Google AI Studio](https://aistudio.google.com/app/apikey).
+    *   For OpenAI-compatible APIs: This depends on the service (e.g., OpenRouter key, or none if using a local server without auth).
 
 ## Setup and Installation (for Development)
 
@@ -71,11 +80,14 @@ An AI-powered desktop application for generating detailed to-do lists and study 
     ```
 
 3.  **Configure API Key:**
-    *   **Option 1 (Recommended for Development):** Create a file named `.env` in the project root directory (`day-planner/`). Add your Gemini API key to this file:
+    *   **Option 1 (Gemini - Recommended for Development):** Create a file named `.env` in the project root directory (`day-planner/`). Add your Gemini API key to this file if you plan to use Gemini primarily during development without initial in-app setup:
         ```
-        GEMINI_API_KEY=YOUR_ACTUAL_API_KEY_HERE
+        GEMINI_API_KEY=YOUR_ACTUAL_GEMINI_API_KEY_HERE
         ```
-    *   **Option 2 (In-App Settings):** Alternatively, you can run the app once and set the API key via the "Settings" view within the application. The app will prioritize the key set in the Settings view.
+        This `.env` key acts as a fallback if no Gemini key is set in the app's settings.
+    *   **Option 2 (In-App Settings - Required for OpenAI & Preferred for Gemini):** Run the app once and configure your chosen AI provider (Gemini or OpenAI-compatible) via the "Settings" view. This is the primary way to set API credentials and endpoints.
+        *   For Gemini: Enter API Key and select/specify model.
+        *   For OpenAI-compatible: Enter Base URL, API Key (if any), and Model name.
 
 ## Running the Application (for Development)
 
@@ -105,23 +117,26 @@ sudo apt-get install -f
 *   **Sidebar:** Use the sidebar on the left to navigate between different views: Generator, History, Dashboard, Calendar/Plan, and Settings. The sidebar can be collapsed/expanded using the toggle button at the bottom.
 *   **Generator:**
     *   Select a predefined topic from the dropdown or choose "Other (Specify below)" to enter a custom topic.
-    *   Click "Generate" to get an AI-generated to-do list.
+    *   Click "Generate" to get an AI-generated to-do list using your configured AI provider.
     *   Use "Pick for Me" to have a random, non-completed topic selected.
-    *   Download the generated list as a text file.
+    *   Download the generated list as an Obsidian-compatible **Markdown (.md) file**.
 *   **History:**
     *   View all previously generated to-do lists.
     *   Search history by topic.
     *   Click on an item to view its details, add/edit notes, and interact with its checkboxes (progress is saved).
-    *   Clear all history if needed.
+    *   **Delete individual history entries** or clear all history.
 *   **Dashboard:**
-    *   View a chart showing the number of to-do lists generated for each topic.
+    *   View "Overall Task Completion" percentage across all lists.
+    *   See a chart for "Number of To-Do Lists Generated per Topic".
+    *   Analyze "Task Completion Rate per Topic" with another chart.
 *   **Calendar/Plan:**
     *   View a monthly calendar. Navigate with "Prev," "Next," and "Today" buttons.
     *   Click on a day to add a manual event. Click an existing event to edit or delete it.
     *   Use the "AI Study Plan Generator" section: enter a main topic, start date, and end date, then click "Generate AI Plan." The AI will create a structured plan and add it to your calendar.
 *   **Settings:**
-    *   Enter your Google Gemini API Key.
-    *   Select your preferred AI model from the dropdown or specify a custom one if "Other" is selected.
+    *   **Choose AI Provider:** Select between "Google Gemini" and "OpenAI-compatible API".
+    *   **Gemini Configuration:** If Gemini is selected, enter your API Key and choose/specify your Gemini model.
+    *   **OpenAI-compatible Configuration:** If OpenAI is selected, enter the API Base URL (e.g., `http://localhost:1234/v1` for a local LLM, or an OpenRouter URL), your API Key (if required by the service), and the specific model name.
     *   Click "Save Settings." These settings will be used for all AI interactions.
 *   **Dark Mode:** Toggle between light and dark themes using the 🌓/☀️ button in the sidebar header.
 

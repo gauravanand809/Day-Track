@@ -51,9 +51,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
 
     // Settings View Elements
-    const apiKeyInput = document.getElementById('api-key-input');
-    const aiModelSelect = document.getElementById('ai-model-select');
-    const aiModelOtherInput = document.getElementById('ai-model-other-input');
+    const aiProviderSelect = document.getElementById('ai-provider-select');
+    
+    const geminiSettingsGroup = document.getElementById('gemini-settings-group');
+    const geminiApiKeyInput = document.getElementById('gemini-api-key-input'); 
+    const geminiAiModelSelect = document.getElementById('gemini-ai-model-select'); 
+    const geminiAiModelOtherInput = document.getElementById('gemini-ai-model-other-input'); 
+
+    const openaiSettingsGroup = document.getElementById('openai-settings-group');
+    const openaiBaseUrlInput = document.getElementById('openai-base-url-input');
+    const openaiApiKeyInput = document.getElementById('openai-api-key-input');
+    const openaiModelNameInput = document.getElementById('openai-model-name-input');
+    
     const saveSettingsBtn = document.getElementById('save-settings-btn');
     const toastContainer = document.getElementById('toast-container');
 
@@ -70,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentDate = new Date(); 
     const calendarEventsKey = 'customCalendarEvents';
     const appSettingsKey = 'appSettings';
-    const defaultModel = 'gemini-2.5-pro-preview-06-05';
+    const defaultModel = 'gemini-2.5-pro-preview-06-05'; // Default Gemini model
 
     // --- Toast Notification Logic ---
     function showToast(message, type = 'info', duration = 3000) {
@@ -124,11 +133,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Settings Management ---
     function getAppSettings() {
         const settingsString = localStorage.getItem(appSettingsKey);
-        const defaultSettingsValues = { apiKey: '', aiModel: defaultModel };
+        const defaultSettingsValues = {
+            aiProvider: 'gemini', 
+            geminiApiKey: '',
+            geminiModel: defaultModel, 
+            openaiBaseUrl: '',
+            openaiApiKey: '',
+            openaiModel: ''
+        };
         if (settingsString) {
             try {
                 const parsedSettings = JSON.parse(settingsString);
-                return { ...defaultSettingsValues, ...parsedSettings, aiModel: parsedSettings.aiModel || defaultModel };
+                return {
+                    ...defaultSettingsValues,
+                    ...parsedSettings,
+                    aiProvider: parsedSettings.aiProvider || defaultSettingsValues.aiProvider,
+                    geminiModel: parsedSettings.geminiModel || defaultSettingsValues.geminiModel
+                };
             } catch (e) {
                 console.error("Error parsing app settings from localStorage", e);
                 return defaultSettingsValues;
@@ -140,64 +161,110 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveAppSettings(settings) {
         localStorage.setItem(appSettingsKey, JSON.stringify(settings));
     }
-
-    function loadSettingsIntoForm() {
-        if (!apiKeyInput || !aiModelSelect || !aiModelOtherInput) {
-            console.warn("Settings form elements not found for loading.");
-            return;
-        }
-        const settings = getAppSettings();
-        apiKeyInput.value = settings.apiKey || '';
-        
-        const savedModel = settings.aiModel || defaultModel;
-        let modelIsPredefined = false;
-        for (let i = 0; i < aiModelSelect.options.length; i++) {
-            if (aiModelSelect.options[i].value === savedModel) {
-                aiModelSelect.value = savedModel;
-                modelIsPredefined = true;
-                break;
-            }
-        }
-
-        if (modelIsPredefined && aiModelSelect.value !== 'other') {
-            aiModelOtherInput.style.display = 'none';
-            aiModelOtherInput.value = '';
-        } else { 
-            aiModelSelect.value = 'other';
-            aiModelOtherInput.value = (savedModel === 'other' && !settings.aiModel) ? '' : savedModel;
-            aiModelOtherInput.style.display = 'block';
+    
+    function toggleSettingsVisibility(provider) {
+        if (provider === 'gemini') {
+            if (geminiSettingsGroup) geminiSettingsGroup.style.display = 'block';
+            if (openaiSettingsGroup) openaiSettingsGroup.style.display = 'none';
+        } else if (provider === 'openai') {
+            if (geminiSettingsGroup) geminiSettingsGroup.style.display = 'none';
+            if (openaiSettingsGroup) openaiSettingsGroup.style.display = 'block';
         }
     }
 
-    if (aiModelSelect && aiModelOtherInput) {
-        aiModelSelect.addEventListener('change', () => {
-            if (aiModelSelect.value === 'other') {
-                aiModelOtherInput.style.display = 'block';
+    function loadSettingsIntoForm() {
+        if (!aiProviderSelect || !geminiApiKeyInput || !geminiAiModelSelect || !geminiAiModelOtherInput || !openaiBaseUrlInput || !openaiApiKeyInput || !openaiModelNameInput) {
+            console.warn("One or more settings form elements not found for loading.");
+            return;
+        }
+        const settings = getAppSettings();
+
+        aiProviderSelect.value = settings.aiProvider;
+        
+        geminiApiKeyInput.value = settings.geminiApiKey || '';
+        const savedGeminiModel = settings.geminiModel || defaultModel;
+        let geminiModelIsPredefined = false;
+        for (let i = 0; i < geminiAiModelSelect.options.length; i++) {
+            if (geminiAiModelSelect.options[i].value === savedGeminiModel) {
+                geminiAiModelSelect.value = savedGeminiModel;
+                geminiModelIsPredefined = true;
+                break;
+            }
+        }
+        if (geminiModelIsPredefined && geminiAiModelSelect.value !== 'other') {
+            geminiAiModelOtherInput.style.display = 'none';
+            geminiAiModelOtherInput.value = '';
+        } else {
+            geminiAiModelSelect.value = 'other';
+            if (savedGeminiModel && savedGeminiModel !== 'other' && !geminiModelIsPredefined) {
+                 geminiAiModelOtherInput.value = savedGeminiModel;
             } else {
-                aiModelOtherInput.style.display = 'none';
-                aiModelOtherInput.value = ''; 
+                 geminiAiModelOtherInput.value = '';
+            }
+            geminiAiModelOtherInput.style.display = 'block';
+        }
+
+        openaiBaseUrlInput.value = settings.openaiBaseUrl || '';
+        openaiApiKeyInput.value = settings.openaiApiKey || '';
+        openaiModelNameInput.value = settings.openaiModel || '';
+        
+        toggleSettingsVisibility(aiProviderSelect.value);
+    }
+
+    if (aiProviderSelect) {
+        aiProviderSelect.addEventListener('change', (e) => {
+            toggleSettingsVisibility(e.target.value);
+        });
+    }
+
+    if (geminiAiModelSelect && geminiAiModelOtherInput) { 
+        geminiAiModelSelect.addEventListener('change', () => { 
+            if (geminiAiModelSelect.value === 'other') { 
+                geminiAiModelOtherInput.style.display = 'block'; 
+            } else {
+                geminiAiModelOtherInput.style.display = 'none'; 
+                geminiAiModelOtherInput.value = '';  
             }
         });
     }
 
     if (saveSettingsBtn) {
         saveSettingsBtn.addEventListener('click', () => {
-            if (!apiKeyInput || !aiModelSelect || !aiModelOtherInput) return;
+            if (!aiProviderSelect || !geminiApiKeyInput || !geminiAiModelSelect || !geminiAiModelOtherInput || !openaiBaseUrlInput || !openaiApiKeyInput || !openaiModelNameInput) {
+                 showToast("Error: Critical settings form elements are missing from the page.", 'error');
+                 return;
+            }
             
-            let finalModelName = aiModelSelect.value;
-            if (aiModelSelect.value === 'other') {
-                const customModelName = aiModelOtherInput.value.trim();
-                if (!customModelName) {
-                    showToast("Please enter a custom model name if 'Other' is selected.", 'error');
+            let finalGeminiModelName = geminiAiModelSelect.value;
+            if (geminiAiModelSelect.value === 'other') {
+                const customGeminiModelName = geminiAiModelOtherInput.value.trim();
+                if (!customGeminiModelName) {
+                    showToast("Please enter a custom Gemini model name if 'Other' is selected for Gemini.", 'error');
                     return;
                 }
-                finalModelName = customModelName;
+                finalGeminiModelName = customGeminiModelName;
             }
 
             const newSettings = {
-                apiKey: apiKeyInput.value.trim(),
-                aiModel: finalModelName
+                aiProvider: aiProviderSelect.value,
+                geminiApiKey: geminiApiKeyInput.value.trim(),
+                geminiModel: finalGeminiModelName,
+                openaiBaseUrl: openaiBaseUrlInput.value.trim(),
+                openaiApiKey: openaiApiKeyInput.value.trim(),
+                openaiModel: openaiModelNameInput.value.trim()
             };
+
+            if (newSettings.aiProvider === 'openai') {
+                if (!newSettings.openaiBaseUrl) {
+                    showToast("OpenAI Base URL is required when OpenAI provider is selected.", 'error');
+                    return;
+                }
+                 if (!newSettings.openaiModel) {
+                    showToast("OpenAI Model Name is required when OpenAI provider is selected.", 'error');
+                    return;
+                }
+            }
+
             saveAppSettings(newSettings);
             showToast('Settings saved successfully!', 'success');
         });
@@ -291,7 +358,16 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`Requesting AI Plan: Topic: ${topic}, Start: ${startDate}, End: ${endDate}`);
             try {
                 const appSettings = getAppSettings();
-                const planData = await window.electronAPI.generateAiStudyPlan({ topic, startDate, endDate, apiKey: appSettings.apiKey, model: appSettings.aiModel });
+                const apiArgs = {
+                    topic, startDate, endDate,
+                    aiProvider: appSettings.aiProvider,
+                    geminiApiKey: appSettings.geminiApiKey,
+                    geminiModel: appSettings.geminiModel,
+                    openaiBaseUrl: appSettings.openaiBaseUrl,
+                    openaiApiKey: appSettings.openaiApiKey,
+                    openaiModel: appSettings.openaiModel
+                };
+                const planData = await window.electronAPI.generateAiStudyPlan(apiArgs);
                 if (planData && planData.error) throw new Error(planData.error);
                 if (planData && Array.isArray(planData) && planData.length > 0) {
                     let currentCalendarEvents = getCustomCalendarEvents(); const titleMaxLength = 30;
@@ -336,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tempDiv.innerHTML = marked.parse(itemMarkdownContent);
 
             let potentialTasksInItemCount = 0;
-            const potentialTaskKeysInItem = []; // Stores task names (keys) from Markdown
+            const potentialTaskKeysInItem = []; 
 
             const table = tempDiv.querySelector('table');
             if (table) {
@@ -344,12 +420,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 rows.forEach(row => {
                     if (row.cells.length >= 3) {
                         const firstCell = row.cells[0];
-                        const taskNameCell = row.cells[2]; // Assuming task name/key is in the 3rd cell
-                        // A row is a potential task if its first cell was originally '[ ]' (as per AI generation)
-                        // and it has a task name.
+                        const taskNameCell = row.cells[2]; 
                         if (firstCell && taskNameCell && firstCell.textContent.trim() === '[ ]') {
                             const taskKey = taskNameCell.textContent.trim();
-                            if (taskKey) { // Ensure task key is not empty
+                            if (taskKey) { 
                                 potentialTasksInItemCount++;
                                 potentialTaskKeysInItem.push(taskKey);
                             }
@@ -368,7 +442,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             completedTasksGlobal += completedTasksInThisItem;
 
-            // For topic-wise completion chart
             if (potentialTasksInItemCount > 0) {
                 if (!topicCompletionData[item.topic]) {
                     topicCompletionData[item.topic] = { total: 0, completed: 0 };
@@ -386,7 +459,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn("Overall completion display elements not found.");
         }
 
-        // --- 2. Existing Bar Chart (myChart - To-Do Lists Generated per Topic) Color Update ---
         const topicCounts = {};
         history.forEach(item => { topicCounts[item.topic] = (topicCounts[item.topic] || 0) + 1; });
         const generatedChartLabels = Object.keys(topicCounts);
@@ -408,8 +480,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             datasets: [{
                                 label: 'Number of To-Do Lists Generated',
                                 data: generatedChartDataValues,
-                                backgroundColor: 'rgba(54, 162, 235, 0.6)', // Blueish
-                                borderColor: 'rgba(54, 162, 235, 1)',     // Blueish
+                                backgroundColor: 'rgba(54, 162, 235, 0.6)', 
+                                borderColor: 'rgba(54, 162, 235, 1)',     
                                 borderWidth: 1
                             }]
                         },
@@ -434,7 +506,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn("myChart canvas not found.");
         }
 
-        // --- 3. New Chart (tasksCompletedChart - Task Completion Rate per Topic) ---
         if (tasksCompletedChartCanvas) {
             let existingCompletionChart = Chart.getChart(tasksCompletedChartCanvas);
             if (existingCompletionChart) existingCompletionChart.destroy();
@@ -456,8 +527,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             datasets: [{
                                 label: 'Task Completion Rate (%)',
                                 data: completionDataValues,
-                                backgroundColor: 'rgba(255, 206, 86, 0.6)', // Yellowish
-                                borderColor: 'rgba(255, 206, 86, 1)',     // Yellowish
+                                backgroundColor: 'rgba(255, 206, 86, 0.6)', 
+                                borderColor: 'rgba(255, 206, 86, 1)',     
                                 borderWidth: 1
                             }]
                         },
@@ -488,7 +559,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveHistory = (history) => localStorage.setItem('todoHistory', JSON.stringify(history));
     function addTopicToHistory(topic, content) {
         const history = getHistory();
-        // Try to load itemStates that might have been set in the generator view for the current topic
         const generatorItemStates = JSON.parse(localStorage.getItem(`todo-${topic}`)) || {};
         
         const newEntry = {
@@ -497,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
             content: content,
             generatedAt: new Date().toISOString(),
             notes: '',
-            itemStates: generatorItemStates // Use states from generator view if available
+            itemStates: generatorItemStates 
         };
         history.unshift(newEntry);
         saveHistory(history);
@@ -518,18 +588,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 history = history.filter(item => item.id !== currentViewingHistoryItemId);
                 saveHistory(history);
                 
-                // Clean up associated todo item states if any (e.g. `todo-${topicName}`)
-                // This part is a bit tricky as we need the topic name of the deleted item.
-                // We can find it before filtering or assume it's not strictly necessary to delete these,
-                // as they won't be accessed anymore for this specific deleted history entry.
-                // For now, let's keep it simple and just remove the history entry itself.
-                // A more robust solution might involve storing topic with itemStates or retrieving topic before delete.
-
                 showToast('History entry deleted.', 'info');
                 historyDetailContainer.style.display = 'none';
                 historyListContainer.style.display = 'block';
                 currentViewingHistoryItemId = null;
-                renderHistoryList(historySearchInput ? historySearchInput.value : ''); // Refresh list
+                renderHistoryList(historySearchInput ? historySearchInput.value : ''); 
             }
         });
     }
@@ -537,21 +600,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (historySearchInput) historySearchInput.addEventListener('input', (e) => renderHistoryList(e.target.value));
     if (clearHistoryBtn) clearHistoryBtn.addEventListener('click', () => { if (confirm('Are you sure you want to clear all history? This action cannot be undone.')) { saveHistory([]); renderHistoryList(); historyDetailContainer.style.display = 'none'; historyListContainer.style.display = 'block'; showToast('All history cleared.', 'info'); } });
     
-    // --- Helper functions for managing completed topics (for generator view) ---
     const getCompletedTopics = () => JSON.parse(localStorage.getItem('completedTopics')) || [];
     const saveCompletedTopics = (topics) => localStorage.setItem('completedTopics', JSON.stringify(topics));
     const updateTopicDisplay = () => { if (!topicSelect) return; const completedTopics = getCompletedTopics(); Array.from(topicSelect.options).forEach(option => { if (option.value) { const originalText = option.dataset.originalText || option.text.replace(" (Done)", ""); option.dataset.originalText = originalText; option.text = completedTopics.includes(option.value) ? `${originalText} (Done)` : originalText; } }); };
     const markTopicAsDone = (topicName) => { const completedTopics = getCompletedTopics(); if (!completedTopics.includes(topicName)) { completedTopics.push(topicName); saveCompletedTopics(completedTopics); updateTopicDisplay(); } };
     const markTopicAsNotDone = (topicName) => { let completedTopics = getCompletedTopics(); if (completedTopics.includes(topicName)) { completedTopics = completedTopics.filter(t => t !== topicName); saveCompletedTopics(completedTopics); updateTopicDisplay(); } };
 
-    // --- Event Listeners for Generator View ---
     if (topicSelect && topicOtherInput) {
         topicSelect.addEventListener('change', () => {
             if (topicSelect.value === 'other-topic') {
                 topicOtherInput.style.display = 'block';
             } else {
                 topicOtherInput.style.display = 'none';
-                topicOtherInput.value = ''; // Clear custom topic input
+                topicOtherInput.value = ''; 
             }
         });
     }
@@ -568,11 +629,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentTopic = topicSelect.value;
             }
             
-            if (!currentTopic && topicSelect.value !== 'other-topic') { // Check if a predefined topic is selected if not 'other'
+            if (!currentTopic && topicSelect.value !== 'other-topic') { 
                 showToast('Please select a topic or enter a custom one.', 'error');
                 return;
             }
-            if (!currentTopic && topicSelect.value === 'other-topic' && !topicOtherInput.value.trim()){ // Specifically for other topic being empty
+            if (!currentTopic && topicSelect.value === 'other-topic' && !topicOtherInput.value.trim()){ 
                  showToast('Please enter a custom topic if "Other" is selected.', 'error');
                 return;
             }
@@ -583,11 +644,16 @@ document.addEventListener('DOMContentLoaded', () => {
             generateBtn.textContent = 'Processing...';
             try {
                 const appSettings = getAppSettings();
-                const data = await window.electronAPI.generateTodo({
-                    topic: currentTopic, 
-                    apiKey: appSettings.apiKey, 
-                    model: appSettings.aiModel 
-                }); 
+                const apiArgs = {
+                    topic: currentTopic,
+                    aiProvider: appSettings.aiProvider,
+                    geminiApiKey: appSettings.geminiApiKey,
+                    geminiModel: appSettings.geminiModel,
+                    openaiBaseUrl: appSettings.openaiBaseUrl,
+                    openaiApiKey: appSettings.openaiApiKey,
+                    openaiModel: appSettings.openaiModel
+                };
+                const data = await window.electronAPI.generateTodo(apiArgs); 
                 if (data.error) throw new Error(data.error);
                 todoContentRaw = data.todoList;
                 addTopicToHistory(currentTopic, todoContentRaw); 
@@ -632,7 +698,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (downloadBtn) { downloadBtn.addEventListener('click', () => { if (!todoContentRaw) { showToast('No todo list content to download.', 'error'); return; } const today = new Date(); const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`; const filename = `${dateStr}_${currentTopic.replace(/\s+/g, '_')}.md`; const blob = new Blob([todoContentRaw], { type: 'text/markdown;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }
     if (pickForMeBtn) { pickForMeBtn.addEventListener('click', () => { const completedTopics = getCompletedTopics(); const availableOptions = Array.from(topicSelect.options).filter(option => option.value && !completedTopics.includes(option.value)).map(option => option.value); if (availableOptions.length === 0) { showToast('All topics are marked as done, or no topics available to pick.', 'info'); return; } const randomIndex = Math.floor(Math.random() * availableOptions.length); topicSelect.value = availableOptions[randomIndex]; }); }
     
-    // Final initial calls
     updateTopicDisplay(); 
     switchToView('generator-view'); 
 });
