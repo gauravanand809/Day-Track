@@ -112,7 +112,10 @@
                     <div id="history-detail-content"></div>
                     <h4>Notes:</h4>
                     <textarea id="history-detail-notes" placeholder="Add your notes for this to-do list..."></textarea>
-                    <button id="save-history-note-btn">Save Note</button>
+                    <div class="history-detail-actions" style="margin-top: 10px; display: flex; gap: 10px;">
+                        <button id="save-history-note-btn">Save Note</button>
+                        <button id="delete-history-entry-btn" class="btn-danger">Delete This Entry</button>
+                    </div>
                 </div>
             </div>
 
@@ -121,8 +124,24 @@
                 <header class="view-header">
                     <h2>Dashboard</h2>
                 </header>
-                <p>Dashboard content will go here (charts, stats, etc.).</p>
-                <canvas id="myChart" width="400" height="200"></canvas> <!-- Example Chart.js canvas -->
+                <div class="dashboard-metrics">
+                    <div class="metric-card">
+                        <h3>Overall Task Completion</h3>
+                        <div id="overall-completion-text" class="metric-value">--%</div>
+                        <div class="progress-bar-container">
+                            <div id="overall-completion-bar" class="progress-bar"></div>
+                        </div>
+                    </div>
+                    <!-- Other metric cards can be added here later -->
+                </div>
+                <div class="chart-container" style="margin-top: 20px;">
+                     <canvas id="myChart" width="400" height="200"></canvas> <!-- Existing chart for topics generated -->
+                </div>
+                <div class="chart-container" style="margin-top: 20px;">
+                    <!-- Placeholder for future charts like tasks completed per week -->
+                    <canvas id="tasksCompletedChart" width="400" height="200"></canvas>
+                </div>
+
             </div>
 
             <!-- Calendar/Plan View (Placeholder) -->

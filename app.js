@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyDetailContent = document.getElementById('history-detail-content');
     const historyDetailNotes = document.getElementById('history-detail-notes');
     const saveHistoryNoteBtn = document.getElementById('save-history-note-btn');
+    const deleteHistoryEntryBtn = document.getElementById('delete-history-entry-btn');
 
     const calendarGrid = document.getElementById('calendar-grid');
     const currentMonthYearDisplay = document.getElementById('current-month-year');
@@ -55,6 +56,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiModelOtherInput = document.getElementById('ai-model-other-input');
     const saveSettingsBtn = document.getElementById('save-settings-btn');
     const toastContainer = document.getElementById('toast-container');
+
+    // Dashboard specific elements
+    const overallCompletionText = document.getElementById('overall-completion-text');
+    const overallCompletionBar = document.getElementById('overall-completion-bar');
+    const tasksCompletedChartCanvas = document.getElementById('tasksCompletedChart');
 
 
     // --- App State ---
@@ -315,29 +321,221 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Dashboard Rendering ---
     function renderDashboard() {
         console.log("Rendering dashboard...");
-        const history = getHistory(); const topicCounts = {};
+        const history = getHistory();
+        
+        // --- 1. Global Overall Task Completion ---
+        let totalTasksGlobal = 0;
+        let completedTasksGlobal = 0;
+        const topicCompletionData = {}; // To store { topic: { total: X, completed: Y } }
+
+        history.forEach(item => {
+            const itemMarkdownContent = item.content || "";
+            const currentItemStates = item.itemStates || {};
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = marked.parse(itemMarkdownContent);
+
+            let potentialTasksInItemCount = 0;
+            const potentialTaskKeysInItem = []; // Stores task names (keys) from Markdown
+
+            const table = tempDiv.querySelector('table');
+            if (table) {
+                const rows = table.querySelectorAll('tbody tr');
+                rows.forEach(row => {
+                    if (row.cells.length >= 3) {
+                        const firstCell = row.cells[0];
+                        const taskNameCell = row.cells[2]; // Assuming task name/key is in the 3rd cell
+                        // A row is a potential task if its first cell was originally '[ ]' (as per AI generation)
+                        // and it has a task name.
+                        if (firstCell && taskNameCell && firstCell.textContent.trim() === '[ ]') {
+                            const taskKey = taskNameCell.textContent.trim();
+                            if (taskKey) { // Ensure task key is not empty
+                                potentialTasksInItemCount++;
+                                potentialTaskKeysInItem.push(taskKey);
+                            }
+                        }
+                    }
+                });
+            }
+            
+            totalTasksGlobal += potentialTasksInItemCount;
+
+            let completedTasksInThisItem = 0;
+            potentialTaskKeysInItem.forEach(taskKey => {
+                if (currentItemStates[taskKey] === true) {
+                    completedTasksInThisItem++;
+                }
+            });
+            completedTasksGlobal += completedTasksInThisItem;
+
+            // For topic-wise completion chart
+            if (potentialTasksInItemCount > 0) {
+                if (!topicCompletionData[item.topic]) {
+                    topicCompletionData[item.topic] = { total: 0, completed: 0 };
+                }
+                topicCompletionData[item.topic].total += potentialTasksInItemCount;
+                topicCompletionData[item.topic].completed += completedTasksInThisItem;
+            }
+        });
+
+        if (overallCompletionText && overallCompletionBar) {
+            const overallPercentage = totalTasksGlobal > 0 ? Math.round((completedTasksGlobal / totalTasksGlobal) * 100) : 0;
+            overallCompletionText.textContent = `${overallPercentage}%`;
+            overallCompletionBar.style.width = `${overallPercentage}%`;
+        } else {
+            console.warn("Overall completion display elements not found.");
+        }
+
+        // --- 2. Existing Bar Chart (myChart - To-Do Lists Generated per Topic) Color Update ---
+        const topicCounts = {};
         history.forEach(item => { topicCounts[item.topic] = (topicCounts[item.topic] || 0) + 1; });
-        const chartLabels = Object.keys(topicCounts); const chartDataValues = Object.values(topicCounts);
-        const ctx = document.getElementById('myChart');
-        if (ctx) {
-            let existingChart = Chart.getChart(ctx); if (existingChart) existingChart.destroy();
-            if (chartLabels.length === 0) { if (ctx.parentElement) ctx.parentElement.innerHTML = "<p style='text-align: center; padding: 20px;'>No data available to display charts. Generate some to-do lists first!</p>"; else console.log("No chart data, and canvas has no parent to display message in."); return; }
-            try {
-                new Chart(ctx, { type: 'bar', data: { labels: chartLabels, datasets: [{ label: 'Number of To-Do Lists Generated', data: chartDataValues, backgroundColor: 'rgba(221, 75, 57, 0.6)', borderColor: 'rgba(221, 75, 57, 1)', borderWidth: 1 }] }, options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: document.body.classList.contains('dark-mode') ? 'rgba(224,224,224,0.8)' : 'rgba(32,32,32,0.8)' }, grid: { color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' } }, x: { ticks: { color: document.body.classList.contains('dark-mode') ? 'rgba(224,224,224,0.8)' : 'rgba(32,32,32,0.8)' }, grid: { color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' } } }, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'top', labels: { color: document.body.classList.contains('dark-mode') ? 'rgba(224,224,224,0.9)' : 'rgba(32,32,32,0.9)' } }, title: { display: true, text: 'To-Do Lists Generated per Topic', color: document.body.classList.contains('dark-mode') ? 'rgba(224,224,224,1)' : 'rgba(32,32,32,1)', font: { size: 16 } } } } });
-            } catch (e) { console.error("Chart.js error:", e); if (ctx.parentElement) ctx.parentElement.innerHTML = "<p style='text-align: center; padding: 20px;'>Chart could not be loaded.</p>"; }
-        } else console.warn("myChart canvas not found.");
+        const generatedChartLabels = Object.keys(topicCounts);
+        const generatedChartDataValues = Object.values(topicCounts);
+        const myChartCanvas = document.getElementById('myChart');
+
+        if (myChartCanvas) {
+            let existingGeneratedChart = Chart.getChart(myChartCanvas);
+            if (existingGeneratedChart) existingGeneratedChart.destroy();
+
+            if (generatedChartLabels.length === 0) {
+                if (myChartCanvas.parentElement) myChartCanvas.parentElement.innerHTML = "<p style='text-align: center; padding: 20px;'>No data for 'Lists Generated' chart. Generate some to-do lists first!</p>";
+            } else {
+                try {
+                    new Chart(myChartCanvas, {
+                        type: 'bar',
+                        data: {
+                            labels: generatedChartLabels,
+                            datasets: [{
+                                label: 'Number of To-Do Lists Generated',
+                                data: generatedChartDataValues,
+                                backgroundColor: 'rgba(54, 162, 235, 0.6)', // Blueish
+                                borderColor: 'rgba(54, 162, 235, 1)',     // Blueish
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: { beginAtZero: true, ticks: { stepSize: 1, color: document.body.classList.contains('dark-mode') ? 'rgba(224,224,224,0.8)' : 'rgba(32,32,32,0.8)' }, grid: { color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' } },
+                                x: { ticks: { color: document.body.classList.contains('dark-mode') ? 'rgba(224,224,224,0.8)' : 'rgba(32,32,32,0.8)' }, grid: { color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' } }
+                            },
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: true, position: 'top', labels: { color: document.body.classList.contains('dark-mode') ? 'rgba(224,224,224,0.9)' : 'rgba(32,32,32,0.9)' } },
+                                title: { display: true, text: 'To-Do Lists Generated per Topic', color: document.body.classList.contains('dark-mode') ? 'rgba(224,224,224,1)' : 'rgba(32,32,32,1)', font: { size: 16 } }
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.error("Chart.js error (myChart):", e);
+                    if (myChartCanvas.parentElement) myChartCanvas.parentElement.innerHTML = "<p style='text-align: center; padding: 20px;'>'Lists Generated' chart could not be loaded.</p>";
+                }
+            }
+        } else {
+            console.warn("myChart canvas not found.");
+        }
+
+        // --- 3. New Chart (tasksCompletedChart - Task Completion Rate per Topic) ---
+        if (tasksCompletedChartCanvas) {
+            let existingCompletionChart = Chart.getChart(tasksCompletedChartCanvas);
+            if (existingCompletionChart) existingCompletionChart.destroy();
+
+            const completionLabels = Object.keys(topicCompletionData);
+            const completionDataValues = completionLabels.map(topic => {
+                const data = topicCompletionData[topic];
+                return data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
+            });
+
+            if (completionLabels.length === 0) {
+                 if (tasksCompletedChartCanvas.parentElement) tasksCompletedChartCanvas.parentElement.innerHTML = "<p style='text-align: center; padding: 20px;'>No data for 'Completion Rate' chart. Generate and complete some tasks first!</p>";
+            } else {
+                try {
+                    new Chart(tasksCompletedChartCanvas, {
+                        type: 'bar',
+                        data: {
+                            labels: completionLabels,
+                            datasets: [{
+                                label: 'Task Completion Rate (%)',
+                                data: completionDataValues,
+                                backgroundColor: 'rgba(255, 206, 86, 0.6)', // Yellowish
+                                borderColor: 'rgba(255, 206, 86, 1)',     // Yellowish
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: { beginAtZero: true, max: 100, ticks: { stepSize: 10, color: document.body.classList.contains('dark-mode') ? 'rgba(224,224,224,0.8)' : 'rgba(32,32,32,0.8)' }, grid: { color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' } },
+                                x: { ticks: { color: document.body.classList.contains('dark-mode') ? 'rgba(224,224,224,0.8)' : 'rgba(32,32,32,0.8)' }, grid: { color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' } }
+                            },
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: true, position: 'top', labels: { color: document.body.classList.contains('dark-mode') ? 'rgba(224,224,224,0.9)' : 'rgba(32,32,32,0.9)' } },
+                                title: { display: true, text: 'Task Completion Rate per Topic', color: document.body.classList.contains('dark-mode') ? 'rgba(224,224,224,1)' : 'rgba(32,32,32,1)', font: { size: 16 } }
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.error("Chart.js error (tasksCompletedChart):", e);
+                    if (tasksCompletedChartCanvas.parentElement) tasksCompletedChartCanvas.parentElement.innerHTML = "<p style='text-align: center; padding: 20px;'>'Completion Rate' chart could not be loaded.</p>";
+                }
+            }
+        } else {
+            console.warn("tasksCompletedChart canvas not found.");
+        }
     }
 
     // --- History Management ---
     const getHistory = () => JSON.parse(localStorage.getItem('todoHistory')) || [];
     const saveHistory = (history) => localStorage.setItem('todoHistory', JSON.stringify(history));
-    function addTopicToHistory(topic, content) { const history = getHistory(); const newEntry = { id: Date.now(), topic: topic, content: content, generatedAt: new Date().toISOString(), notes: '', itemStates: {} }; history.unshift(newEntry); saveHistory(history); }
+    function addTopicToHistory(topic, content) {
+        const history = getHistory();
+        // Try to load itemStates that might have been set in the generator view for the current topic
+        const generatorItemStates = JSON.parse(localStorage.getItem(`todo-${topic}`)) || {};
+        
+        const newEntry = {
+            id: Date.now(),
+            topic: topic,
+            content: content,
+            generatedAt: new Date().toISOString(),
+            notes: '',
+            itemStates: generatorItemStates // Use states from generator view if available
+        };
+        history.unshift(newEntry);
+        saveHistory(history);
+    }
     function renderHistoryList(searchTerm = '') { if (!historyListContainer) return; historyListContainer.innerHTML = ''; const history = getHistory(); const filteredHistory = history.filter(item => item.topic.toLowerCase().includes(searchTerm.toLowerCase())); if (filteredHistory.length === 0) { historyListContainer.innerHTML = '<p>No history found.</p>'; return; } filteredHistory.forEach(item => { const itemDiv = document.createElement('div'); itemDiv.classList.add('history-item'); itemDiv.dataset.historyId = item.id; itemDiv.innerHTML = `<div class="history-item-topic">${item.topic}</div><div class="history-item-date">${new Date(item.generatedAt).toLocaleString()}</div>`; itemDiv.addEventListener('click', () => viewHistoryDetail(item.id)); historyListContainer.appendChild(itemDiv); }); }
     function viewHistoryDetail(historyId) { const history = getHistory(); const item = history.find(h => h.id === historyId); if (!item) return; currentViewingHistoryItemId = historyId; historyDetailTopic.textContent = item.topic; historyDetailDate.textContent = `Generated: ${new Date(item.generatedAt).toLocaleString()}`; historyDetailContent.innerHTML = marked.parse(item.content); historyDetailNotes.value = item.notes || ''; const table = historyDetailContent.querySelector('table'); if (table) { const rows = table.querySelectorAll('tbody tr'); const currentHistoryItemStates = item.itemStates || {}; rows.forEach((row) => { const firstCell = row.cells[0]; const algorithmTopicCell = row.cells[2]; if (firstCell && algorithmTopicCell && firstCell.textContent.trim() === '[ ]') { const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; const itemKey = algorithmTopicCell.textContent.trim(); checkbox.dataset.itemKey = itemKey; if (currentHistoryItemStates[itemKey]) checkbox.checked = true; checkbox.addEventListener('change', () => { currentHistoryItemStates[itemKey] = checkbox.checked; const allHistory = getHistory(); const historyItemIndex = allHistory.findIndex(h => h.id === historyId); if (historyItemIndex > -1) { allHistory[historyItemIndex].itemStates = currentHistoryItemStates; saveHistory(allHistory); } }); firstCell.innerHTML = ''; firstCell.appendChild(checkbox); } }); } historyListContainer.style.display = 'none'; historyDetailContainer.style.display = 'block'; }
     if (backToHistoryListBtn) backToHistoryListBtn.addEventListener('click', () => { historyDetailContainer.style.display = 'none'; historyListContainer.style.display = 'block'; currentViewingHistoryItemId = null; renderHistoryList(historySearchInput ? historySearchInput.value : ''); });
     if (saveHistoryNoteBtn) saveHistoryNoteBtn.addEventListener('click', () => { if (!currentViewingHistoryItemId) return; const history = getHistory(); const itemIndex = history.findIndex(h => h.id === currentViewingHistoryItemId); if (itemIndex > -1) { history[itemIndex].notes = historyDetailNotes.value; saveHistory(history); showToast('Note saved!', 'success'); } });
+    
+    if (deleteHistoryEntryBtn) {
+        deleteHistoryEntryBtn.addEventListener('click', () => {
+            if (!currentViewingHistoryItemId) {
+                showToast('No history item selected to delete.', 'error');
+                return;
+            }
+            if (confirm('Are you sure you want to delete this history entry? This action cannot be undone.')) {
+                let history = getHistory();
+                history = history.filter(item => item.id !== currentViewingHistoryItemId);
+                saveHistory(history);
+                
+                // Clean up associated todo item states if any (e.g. `todo-${topicName}`)
+                // This part is a bit tricky as we need the topic name of the deleted item.
+                // We can find it before filtering or assume it's not strictly necessary to delete these,
+                // as they won't be accessed anymore for this specific deleted history entry.
+                // For now, let's keep it simple and just remove the history entry itself.
+                // A more robust solution might involve storing topic with itemStates or retrieving topic before delete.
+
+                showToast('History entry deleted.', 'info');
+                historyDetailContainer.style.display = 'none';
+                historyListContainer.style.display = 'block';
+                currentViewingHistoryItemId = null;
+                renderHistoryList(historySearchInput ? historySearchInput.value : ''); // Refresh list
+            }
+        });
+    }
+
     if (historySearchInput) historySearchInput.addEventListener('input', (e) => renderHistoryList(e.target.value));
-    if (clearHistoryBtn) clearHistoryBtn.addEventListener('click', () => { if (confirm('Are you sure you want to clear all history?')) { saveHistory([]); renderHistoryList(); historyDetailContainer.style.display = 'none'; historyListContainer.style.display = 'block'; showToast('All history cleared.', 'info'); } });
+    if (clearHistoryBtn) clearHistoryBtn.addEventListener('click', () => { if (confirm('Are you sure you want to clear all history? This action cannot be undone.')) { saveHistory([]); renderHistoryList(); historyDetailContainer.style.display = 'none'; historyListContainer.style.display = 'block'; showToast('All history cleared.', 'info'); } });
     
     // --- Helper functions for managing completed topics (for generator view) ---
     const getCompletedTopics = () => JSON.parse(localStorage.getItem('completedTopics')) || [];
@@ -431,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    if (downloadBtn) { downloadBtn.addEventListener('click', () => { if (!todoContentRaw) { showToast('No todo list content to download.', 'error'); return; } const today = new Date(); const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`; const filename = `${dateStr}_${currentTopic.replace(/\s+/g, '_')}.txt`; const blob = new Blob([todoContentRaw], { type: 'text/plain;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }
+    if (downloadBtn) { downloadBtn.addEventListener('click', () => { if (!todoContentRaw) { showToast('No todo list content to download.', 'error'); return; } const today = new Date(); const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`; const filename = `${dateStr}_${currentTopic.replace(/\s+/g, '_')}.md`; const blob = new Blob([todoContentRaw], { type: 'text/markdown;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }
     if (pickForMeBtn) { pickForMeBtn.addEventListener('click', () => { const completedTopics = getCompletedTopics(); const availableOptions = Array.from(topicSelect.options).filter(option => option.value && !completedTopics.includes(option.value)).map(option => option.value); if (availableOptions.length === 0) { showToast('All topics are marked as done, or no topics available to pick.', 'info'); return; } const randomIndex = Math.floor(Math.random() * availableOptions.length); topicSelect.value = availableOptions[randomIndex]; }); }
     
     // Final initial calls
